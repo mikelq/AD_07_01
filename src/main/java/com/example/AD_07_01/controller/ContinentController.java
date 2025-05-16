@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.example.AD_07_01.domain.Continent;
 import com.example.AD_07_01.domain.Country;
 import com.example.AD_07_01.repository.ContinentRepository;
+import com.example.AD_07_01.repository.CountryRepository;
 
 @RestController
 @RequestMapping("/api/continents")
@@ -27,6 +28,9 @@ public class ContinentController {
 	//se auto inyecta
 	@Autowired
 	private ContinentRepository continentRepository;
+	
+	@Autowired
+	private CountryRepository countryRepository;
 	
 	//devuelve todos los continentes
 	@GetMapping
@@ -51,12 +55,22 @@ public class ContinentController {
 	
 	//UPDATE
 	@PutMapping("/{id}")
-	public ResponseEntity<Continent> update(@PathVariable int id, @RequestBody Continent updatedContinent){
-		return continentRepository.findById(id).map(continent-> {
-			continent.setName(updatedContinent.getName());
-			continent.setCountries(updatedContinent.getCountries());
-			return ResponseEntity.ok(continentRepository.save(continent));
-		}).orElseGet(() -> ResponseEntity.notFound().build());
+	public ResponseEntity<Continent> update(@PathVariable int id, @RequestBody Continent updatedContinent) {
+	    return continentRepository.findById(id).map(continent -> {
+	        continent.setName(updatedContinent.getName());
+
+	        if (updatedContinent.getCountries() != null) {
+
+	            continent.getCountries().clear();
+
+
+	            for (Country c : updatedContinent.getCountries()) {
+	                countryRepository.findById(c.getId()).ifPresent(continent.getCountries()::add);
+	            }
+	        }
+
+	        return ResponseEntity.ok(continentRepository.save(continent));
+	    }).orElseGet(() -> ResponseEntity.notFound().build());
 	}
 	
 	//DELETE
